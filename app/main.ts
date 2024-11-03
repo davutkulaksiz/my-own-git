@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import zlib from "zlib";
+import zlib, { inflateSync } from "zlib";
 import crypto from "crypto";
 
 const args = process.argv.slice(2);
@@ -9,6 +9,7 @@ enum Commands {
   Init = "init",
   Catfile = "cat-file",
   HashObject = "hash-object",
+  LsTree = "ls-tree",
 }
 
 switch (command) {
@@ -63,6 +64,24 @@ switch (command) {
         process.stdout.write(sha1);
       } else {
         throw new Error("Use the correct flag");
+      }
+    }
+    break;
+  case Commands.LsTree:
+    {
+      const hash = args[2];
+      const file = fs.readFileSync(
+        `.git/objects/${hash.slice(0, 2)}/${hash.slice(2)}`
+      );
+
+      const uncompressed = inflateSync(file);
+      const dec = new TextDecoder();
+      const str = dec.decode(uncompressed);
+
+      const [, ...content] = str.split("\0");
+      for (let i = 0; i < content.length - 1; i++) {
+        const [, name] = content[i].split(" ");
+        console.log(`${name}`);
       }
     }
     break;
