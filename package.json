@@ -1,0 +1,11 @@
+{
+  "name": "my-own-git",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run app/main.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
