@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import zlib from "zlib";
+import crypto from "crypto";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -7,6 +8,7 @@ const command = args[0];
 enum Commands {
   Init = "init",
   Catfile = "cat-file",
+  HashObject = "hash-object",
 }
 
 switch (command) {
@@ -33,6 +35,34 @@ switch (command) {
         process.stdout.write(content.toString());
       } else {
         throw new Error(`Unknown flag ${flag}`);
+      }
+    }
+    break;
+  case Commands.HashObject:
+    {
+      const flag = args[1];
+      const path = args[2];
+
+      if (flag === "-w") {
+        const fileContent = fs.readFileSync(path);
+        const uncompressed = Buffer.from(
+          `blob ${fileContent.length}\0${fileContent}`
+        );
+        const sha1 = crypto
+          .createHash("sha1")
+          .update(uncompressed)
+          .digest("hex");
+
+        const compressedContent = zlib.deflateSync(uncompressed);
+        const directory = `.git/objects/${sha1.slice(0, 2)}`;
+        const fileName = `${sha1.slice(2)}`;
+
+        fs.mkdirSync(directory, { recursive: true });
+        fs.writeFileSync(`${directory}/${fileName}`, compressedContent);
+
+        process.stdout.write(sha1);
+      } else {
+        throw new Error("Use the correct flag");
       }
     }
     break;
